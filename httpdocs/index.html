@@ -18,12 +18,26 @@
   <header>
 
   </header>
-  <div role="main">
-    <h1>Now does this work?</h1>
+  <div role="main" class="main">
+    <p>Loading projects ...</p>
   </div>
   <footer>
 
   </footer>
+
+  <script id="timeline" type="text/html">
+    <ul class="timeline">
+    {{#projects}}
+      <li>
+        {{#imageThumb}}<img src="{{imageThumb}}" width="75" height="75" alt="{{name}}" />{{/imageThumb}}
+        {{#name}}<p><strong>Name:</strong> {{name}}</p>{{/name}}
+        {{#pattern}}<p><strong>Pattern:</strong> {{patternName}})</p>{{/pattern}}
+        {{#startDateHuman}}<p><strong>Started:</strong> {{startDateHuman}}{{/startDateHuman}}
+        {{#durationHuman}}<p><strong>Duration:</strong> {{durationHuman}}</p>{{/durationHuman}}
+      </li>
+    {{/projects}}
+    </ul>
+  </script>
 
 
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
