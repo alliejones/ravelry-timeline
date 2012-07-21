@@ -18,8 +18,8 @@
   <header>
 
   </header>
+  <canvas id="c" style="position: absolute"></canvas>
   <div role="main" class="main">
-    <p>Loading projects ...</p>
   </div>
   <footer>
 
@@ -34,6 +34,7 @@
         {{#pattern}}<p><strong>Pattern:</strong> {{patternName}})</p>{{/pattern}}
         {{#startDateHuman}}<p><strong>Started:</strong> {{startDateHuman}}{{/startDateHuman}}
         {{#durationHuman}}<p><strong>Duration:</strong> {{durationHuman}}</p>{{/durationHuman}}
+        {{startOffsetHuman}}
       </li>
     {{/projects}}
     </ul>
@@ -45,5 +46,6 @@
 
   <script src="js/plugins.js"></script>
   <script src="js/script.js"></script>
+  <script src="js/fabric.all.min.js"></script>
 </body>
 </html>
