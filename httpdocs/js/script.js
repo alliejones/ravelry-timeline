@@ -16,7 +16,7 @@ var Timeline = function (data) {
 	self.config.minCanvasWidth = $(window).width();
 	self.config.minMonthWidth = 30; //px
 	self.config.monthWidth = null; //px
-	self.config.barHeight = 50;
+	self.config.barHeight = null;
 	self.config.barSpacing = 5;
 	self.config.barStackHeight = 10;
 	self.config.barColor = 'rgba(124,145,222,.75)';
@@ -114,22 +114,21 @@ var Timeline = function (data) {
 	self.initCanvas = function() {
 		var monthWidth;
 		var canvasWidth;
-		var canvasHeight;
 		var windowHeight;
+		var barHeight;
 
 		self.canvas = new fabric.Canvas('c');
 		self.canvas.selection = false;
 
+		/* Set the canvas height and set bar height so they fit */
 		windowHeight = $(window).height();
-		canvasHeight = (self.config.barStackHeight + 2) *
-			(self.config.barHeight + self.config.barSpacing);
-		if (canvasHeight < windowHeight) {
-			self.canvas.setHeight(windowHeight);
-		} else {
-			self.canvas.setHeight(canvasHeight);
-		}
+		self.canvas.setHeight(windowHeight);
+		barHeight = Math.floor((windowHeight - ((self.config.barStackHeight + 2) * self.config.barSpacing)) / (self.config.barStackHeight + 2));
+		self.config.barHeight = barHeight;
 
-		// add two extra months for whitespace
+		/* Determine the time span of the project data, which indicates how
+		   wide the canvas should be */
+		// add two extra months for whitespace on the left and right
 		self.config.monthCount = Math.ceil(self.data.duration.asMonths()) + 2;
 
 		monthWidth = Math.floor(self.config.minCanvasWidth / self.config.monthCount);
@@ -140,6 +139,7 @@ var Timeline = function (data) {
 		self.canvas.setWidth(canvasWidth);
 		$(window).width(canvasWidth);
 
+		/* Hover events for project bars */
 		self.canvas.on('object:over', function(e) {
 			if (e.target.timelineObjectType === 'projectBar') {
 				self.onProjectBarMouseOver(e.target);
@@ -259,4 +259,10 @@ $(function() {
 		tl = new Timeline(data);
 		tl.init();
 	});
+
+	// scroll horizontally instead of vertically with the mousewheel
+	$("body").on('mousewheel', function(e, delta) {
+      this.scrollLeft -= (delta * 30);
+      e.preventDefault();
+   });
 });
