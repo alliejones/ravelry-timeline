@@ -18,23 +18,23 @@
   <header>
 
   </header>
+
   <canvas id="c" style="position: absolute"></canvas>
-  <div role="main" class="main">
-  </div>
+  <div role="main" class="main"></div>
+
   <footer>
 
   </footer>
 
-  <script id="timeline" type="text/html">
-    <ul class="timeline">
+  <script id="projectInfo" type="text/html">
+    <ul class="projectInfo">
     {{#projects}}
-      <li>
+      <li id="project-{{id}}">
         {{#imageThumb}}<img src="{{imageThumb}}" width="75" height="75" alt="{{name}}" />{{/imageThumb}}
         {{#name}}<p><strong>Name:</strong> {{name}}</p>{{/name}}
-        {{#pattern}}<p><strong>Pattern:</strong> {{patternName}})</p>{{/pattern}}
+        {{#patternName}}<p><strong>Pattern:</strong> {{patternName}}</p>{{/patternName}}
         {{#startDateHuman}}<p><strong>Started:</strong> {{startDateHuman}}{{/startDateHuman}}
-        {{#durationHuman}}<p><strong>Duration:</strong> {{durationHuman}}</p>{{/durationHuman}}
-        {{startOffsetHuman}}
+        {{#endDateHuman}}<p><strong>Finished:</strong> {{endDateHuman}}{{/endDateHuman}}
       </li>
     {{/projects}}
     </ul>

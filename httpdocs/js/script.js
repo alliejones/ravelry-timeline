@@ -25,6 +25,7 @@ var Timeline = function (data) {
 	self.canvas = null;
 
 	self.Project = function (start, end, data) {
+		this.id = data.id;
 		this.name = data.name;
 		this.patternName = data.pattern ? data.pattern.name : null;
 
@@ -34,8 +35,8 @@ var Timeline = function (data) {
 		this.startDate = start;
 		this.startDateHuman = start ? start.format('LL') : null;
 		this.startOffset = null;
-		this.startOffsetHuman = null;
 		this.endDate = end;
+		this.endDateHuman = end ? end.format('LL') : null;
 		
 		this.duration = moment.duration(end.diff(start));
 		this.durationHuman = this.duration ? this.duration.asMonths() : null;
@@ -59,6 +60,7 @@ var Timeline = function (data) {
 			height: self.config.barHeight,
 			fill: 'rgba(124,145,222,.75)',
 		});
+		obj.projectId = this.id;
 		obj.timelineObjectType = 'projectBar';
 		obj.hasControls = obj.hasBorders = false;
 		obj.lockMovementX = obj.lockMovementY = true;
@@ -75,10 +77,12 @@ var Timeline = function (data) {
 	};
 
 	self.initProjects = function () {
-		_.each(self.rawData.projects, function(proj) {
+		_.each(self.rawData.projects, function(proj, i) {
 			var start = moment(proj.started);
 			var end = moment(proj.completed);
 			var duration = null;
+
+			proj.id = i;
 
 			if (start !== null && end !== null) {
 
@@ -130,21 +134,55 @@ var Timeline = function (data) {
 
 		self.canvas.on('object:over', function(e) {
 			if (e.target.timelineObjectType === 'projectBar') {
-			  e.target.setFill('red');
-			  self.canvas.renderAll();
+				self.onProjectBarMouseOver(e.target);
 			}
 		});
 
 		self.canvas.on('object:out', function(e) {
 			if (e.target.timelineObjectType === 'projectBar') {
-			  e.target.setFill(self.config.barColor);
-			  self.canvas.renderAll();
+				self.onProjectBarMouseOut(e.target);
 			}
 		});
+
+		/* This function is from the fabric.js demos:
+			 http://fabricjs.com/hovering/ */
+		self.canvas.findTarget = (function(originalFn) {
+		  return function() {
+		    var target = originalFn.apply(this, arguments);
+		    if (target) {
+		      if (this._hoveredTarget !== target) {
+		        self.canvas.fire('object:over', { target: target });
+		        if (this._hoveredTarget) {
+		          self.canvas.fire('object:out', { target: this._hoveredTarget });
+		        }
+		        this._hoveredTarget = target;
+		      }
+		    }
+		    else if (this._hoveredTarget) {
+		      self.canvas.fire('object:out', { target: this._hoveredTarget });
+		      this._hoveredTarget = null;
+		    }
+		    return target;
+		  };
+		})(self.canvas.findTarget);
+	};
+
+	self.onProjectBarMouseOver = function (bar) {
+	  bar.setFill("red");
+	  self.canvas.renderAll();
+
+	  $('#project-'+bar.projectId).show();
+	};
+
+	self.onProjectBarMouseOut = function (bar) {
+	  bar.setFill(self.config.barColor);
+	  self.canvas.renderAll();
+
+	  $('#project-'+bar.projectId).hide();
 	};
 
 	self.render = function() {
-		//$('.main').html(ich.timeline(self.data));
+		$('.main').html(ich.projectInfo(self.data));
 
 		self.drawGrid();
 		self.drawProjectBars();
@@ -203,29 +241,8 @@ var Timeline = function (data) {
 				currentYear++;
 			}
 		}
-
-		/* This function is from the fabric.js demos:
-			 http://fabricjs.com/hovering/ */
-		self.canvas.findTarget = (function(originalFn) {
-		  return function() {
-		    var target = originalFn.apply(this, arguments);
-		    if (target) {
-		      if (this._hoveredTarget !== target) {
-		        self.canvas.fire('object:over', { target: target });
-		        if (this._hoveredTarget) {
-		          self.canvas.fire('object:out', { target: this._hoveredTarget });
-		        }
-		        this._hoveredTarget = target;
-		      }
-		    }
-		    else if (this._hoveredTarget) {
-		      self.canvas.fire('object:out', { target: this._hoveredTarget });
-		      this._hoveredTarget = null;
-		    }
-		    return target;
-		  };
-		})(self.canvas.findTarget);
 	};
+
 
 };
 
