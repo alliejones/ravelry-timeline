@@ -129,7 +129,7 @@ var Timeline = function (data) {
 
 	self.drawProjectBars = function() {
 		_.each(self.data.projects, function(proj, i) {
-			proj.drawBar(i % 10);
+			proj.drawBar(i % self.config.barStackHeight);
 		});
 	};
 
