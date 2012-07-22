@@ -114,13 +114,20 @@ var Timeline = function (data) {
 	self.initCanvas = function() {
 		var monthWidth;
 		var canvasWidth;
+		var canvasHeight;
+		var windowHeight;
 
 		self.canvas = new fabric.Canvas('c');
 		self.canvas.selection = false;
-		self.canvas.setHeight(
-			(self.config.barStackHeight + 2) *
-			(self.config.barHeight + self.config.barSpacing)
-		);
+
+		windowHeight = $(window).height();
+		canvasHeight = (self.config.barStackHeight + 2) *
+			(self.config.barHeight + self.config.barSpacing);
+		if (canvasHeight < windowHeight) {
+			self.canvas.setHeight(windowHeight);
+		} else {
+			self.canvas.setHeight(canvasHeight);
+		}
 
 		// add two extra months for whitespace
 		self.config.monthCount = Math.ceil(self.data.duration.asMonths()) + 2;
@@ -131,6 +138,7 @@ var Timeline = function (data) {
 		canvasWidth = self.config.monthWidth * self.config.monthCount;
 		canvasWidth = canvasWidth < self.config.minCanvasWidth ? self.config.minCanvasWidth : canvasWidth;
 		self.canvas.setWidth(canvasWidth);
+		$(window).width(canvasWidth);
 
 		self.canvas.on('object:over', function(e) {
 			if (e.target.timelineObjectType === 'projectBar') {

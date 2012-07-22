@@ -51,3 +51,12 @@ d){return-1!=d.indexOf(this.otag+a)},create_context:function(a){if(this.is_objec
 (b=c[a])||(b=c[a]=d(this.otag,this.ctag));return b}};return{name:"mustache.js",version:"0.4.0",to_html:function(a,c,b,f){var e=new p;if(f)e.send=f;e.render(a,c||{},b);if(!f)return e.buffer.join("\n")}}}();(function(){var c={VERSION:"0.10",templates:{},$:"undefined"!==typeof window?window.jQuery||window.Zepto||null:null,addTemplate:function(e,i){if("object"===typeof e)for(var g in e)this.addTemplate(g,e[g]);else c[e]?console.error("Invalid name: "+e+"."):c.templates[e]?console.error('Template "'+e+
 '  " exists'):(c.templates[e]=i,c[e]=function(g,i){var g=g||{},k=q.to_html(c.templates[e],g,c.templates);return c.$&&!i?c.$(k):k})},clearAll:function(){for(var e in c.templates)delete c[e];c.templates={}},refresh:function(){c.clearAll();c.grabTemplates()},grabTemplates:function(){var e,i=document.getElementsByTagName("script"),g,h=[];for(e=0,l=i.length;e<l;e++)if((g=i[e])&&g.innerHTML&&g.id&&("text/html"===g.type||"text/x-icanhaz"===g.type))c.addTemplate(g.id,"".trim?g.innerHTML.trim():g.innerHTML.replace(/^\s+/,
 "").replace(/\s+$/,"")),h.unshift(g);for(e=0,l=h.length;e<l;e++)h[e].parentNode.removeChild(h[e])}};"undefined"!==typeof require?module.exports=c:window.ich=c;"undefined"!==typeof document&&(c.$?c.$(function(){c.grabTemplates()}):document.addEventListener("DOMContentLoaded",function(){c.grabTemplates()},!0))})()})();
+
+/* Jquery.mousewheel plugin
+ * Copyright (c) 2011 Brandon Aaron (http://brandonaaron.net)
+ * Licensed under the MIT License (LICENSE.txt).
+ *
+ * Version: 2.0.0
+ *
+ * Requires jQuery: 1.7+
+ */(function(a,b){function e(d){var f=d||window.event,g=[].slice.call(arguments,1),h=0,i=0,j=0;return d=a.event.fix(f),d.type="mousewheel",f.wheelDelta&&(h=f.wheelDelta/120),f.detail&&(f.type==c[2]?(this.removeEventListener(c[0],e,!1),h=-f.detail/42):h=-f.detail/3),j=h,f.axis!==b&&f.axis===f.HORIZONTAL_AXIS&&(j=0,i=-1*h),f.wheelDeltaY!==b&&(j=f.wheelDeltaY/120),f.wheelDeltaX!==b&&(i=-1*f.wheelDeltaX/120),g.unshift(d,h,i,j),(a.event.dispatch||a.event.handle).apply(this,g)}var c=["DOMMouseScroll","mousewheel","MozMousePixelScroll"];if(a.event.fixHooks)for(var d=c.length;d;)a.event.fixHooks[c[--d]]=a.event.mouseHooks;a.event.special.mousewheel={setup:function(){if(this.addEventListener)for(var a=c.length;a;)this.addEventListener(c[--a],e,!1);else this.onmousewheel=e},teardown:function(){if(this.removeEventListener)for(var a=c.length;a;)this.removeEventListener(c[--a],e,!1);else this.onmousewheel=null}}})(jQuery);
