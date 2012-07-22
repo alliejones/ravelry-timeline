@@ -15,6 +15,7 @@ var Timeline = function (data) {
 	self.config = {};
 	self.config.minCanvasWidth = $(window).width();
 	self.config.minMonthWidth = 30; //px
+	self.config.minProjectWidth = 10; //px
 	self.config.monthWidth = null; //px
 	self.config.barHeight = null;
 	self.config.barSpacing = 5;
@@ -56,7 +57,8 @@ var Timeline = function (data) {
 			left: ((this.startOffset.asMonths() + 1) * self.config.monthWidth) + (width/2),
 			/* projects that were started and completed on the same day will have
 				 a length of zero, so set a default width of 1-day-ish in that case */ 
-			width: width || self.config.monthWidth/30,
+			width: width < self.config.minProjectWidth ?
+							self.config.minProjectWidth : width,
 			height: self.config.barHeight,
 			fill: 'rgba(124,145,222,.75)',
 		});
