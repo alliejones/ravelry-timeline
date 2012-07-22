@@ -19,6 +19,7 @@ var Timeline = function (data) {
 	self.config.barHeight = 50;
 	self.config.barSpacing = 5;
 	self.config.barStackHeight = 10;
+	self.config.barColor = 'rgba(124,145,222,.75)';
 	self.config.labelTextSettings = {};
 
 	self.canvas = null;
@@ -47,7 +48,7 @@ var Timeline = function (data) {
 	self.Project.prototype.drawBar = function (stackPosition) {
 		var width = self.config.monthWidth * this.duration.asMonths();
 
-		self.canvas.add(new fabric.Rect({
+		var obj = new fabric.Rect({
 			top: (stackPosition * (self.config.barHeight + self.config.barSpacing)) +
 					 self.config.barSpacing + self.config.barHeight*1.5,
 			// offset one month length from the left edge
@@ -56,8 +57,15 @@ var Timeline = function (data) {
 				 a length of zero, so set a default width of 1-day-ish in that case */ 
 			width: width || self.config.monthWidth/30,
 			height: self.config.barHeight,
-			fill: 'rgba(124,145,222,.75)'
-		}));
+			fill: 'rgba(124,145,222,.75)',
+		});
+		obj.timelineObjectType = 'projectBar';
+		obj.hasControls = obj.hasBorders = false;
+		obj.lockMovementX = obj.lockMovementY = true;
+		obj.lockScalingX = obj.lockScalingY = true;
+		obj.lockRotation = true;
+
+		self.canvas.add(obj);
 	}
 
 	self.init = function () {
@@ -103,7 +111,8 @@ var Timeline = function (data) {
 		var monthWidth;
 		var canvasWidth;
 
-		self.canvas = new fabric.StaticCanvas('c');
+		self.canvas = new fabric.Canvas('c');
+		self.canvas.selection = false;
 		self.canvas.setHeight(
 			(self.config.barStackHeight + 2) *
 			(self.config.barHeight + self.config.barSpacing)
@@ -118,6 +127,20 @@ var Timeline = function (data) {
 		canvasWidth = self.config.monthWidth * self.config.monthCount;
 		canvasWidth = canvasWidth < self.config.minCanvasWidth ? self.config.minCanvasWidth : canvasWidth;
 		self.canvas.setWidth(canvasWidth);
+
+		self.canvas.on('object:over', function(e) {
+			if (e.target.timelineObjectType === 'projectBar') {
+			  e.target.setFill('red');
+			  self.canvas.renderAll();
+			}
+		});
+
+		self.canvas.on('object:out', function(e) {
+			if (e.target.timelineObjectType === 'projectBar') {
+			  e.target.setFill(self.config.barColor);
+			  self.canvas.renderAll();
+			}
+		});
 	};
 
 	self.render = function() {
@@ -137,6 +160,8 @@ var Timeline = function (data) {
 		var startMonth = self.data.startDate.month();
 		var currentMonth;
 		var currentYear = self.data.startDate.year();
+		var line;
+		var text;
 
 		for (var i = 0; i <= self.config.monthCount; i++) {
 			// draw darker lines for January
@@ -145,31 +170,63 @@ var Timeline = function (data) {
 			currentMonth = (startMonth + (i + 1)) % 12;
 
 			// month lines
-			self.canvas.add(new fabric.Rect({
+			line = new fabric.Rect({
 				top: self.canvas.height/2,
 				left: i * self.config.monthWidth,
 				height: self.canvas.height,
 				width: 1,
 				fill: lineColor
-			}));
+			});
+
+			line.timelineObjectType = 'line';
+			line.selectable = false;
+
+			self.canvas.add(line);
 
 			// year labels -- print only on January lines
 			if (currentMonth === 1) {
-				self.canvas.add(new fabric.Text(
-					currentYear,
-					{
+				text = new fabric.Text(
+					currentYear, {
 						top: 20,
 						left: (i * self.config.monthWidth) + self.config.monthWidth - 10,
 						angle: -90,
 						fontFamily: "Times_New_Roman",
 						fontSize: 16,
 						fill: 'rgba(50, 50, 50, .5)'
-					})
-				);
+				});
+
+				text.timelineObjectType = 'label';
+				text.selectable = false;
+
+				self.canvas.add(text);
+
 				currentYear++;
 			}
 		}
+
+		/* This function is from the fabric.js demos:
+			 http://fabricjs.com/hovering/ */
+		self.canvas.findTarget = (function(originalFn) {
+		  return function() {
+		    var target = originalFn.apply(this, arguments);
+		    if (target) {
+		      if (this._hoveredTarget !== target) {
+		        self.canvas.fire('object:over', { target: target });
+		        if (this._hoveredTarget) {
+		          self.canvas.fire('object:out', { target: this._hoveredTarget });
+		        }
+		        this._hoveredTarget = target;
+		      }
+		    }
+		    else if (this._hoveredTarget) {
+		      self.canvas.fire('object:out', { target: this._hoveredTarget });
+		      this._hoveredTarget = null;
+		    }
+		    return target;
+		  };
+		})(self.canvas.findTarget);
 	};
+
 };
 
 $(function() {
