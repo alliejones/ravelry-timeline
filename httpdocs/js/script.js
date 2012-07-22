@@ -50,7 +50,7 @@ var Timeline = function (data) {
 	self.Project.prototype.drawBar = function (stackPosition) {
 		var width = self.config.monthWidth * this.duration.asMonths();
 
-		var obj = new fabric.Rect({
+		this.canvasObj = new fabric.Rect({
 			top: (stackPosition * (self.config.barHeight + self.config.barSpacing)) +
 					 self.config.barSpacing + self.config.barHeight*1.5,
 			// offset one month length from the left edge
@@ -62,14 +62,14 @@ var Timeline = function (data) {
 			height: self.config.barHeight,
 			fill: 'rgba(124,145,222,.75)',
 		});
-		obj.projectId = this.id;
-		obj.timelineObjectType = 'projectBar';
-		obj.hasControls = obj.hasBorders = false;
-		obj.lockMovementX = obj.lockMovementY = true;
-		obj.lockScalingX = obj.lockScalingY = true;
-		obj.lockRotation = true;
+		this.canvasObj.projectId = this.id;
+		this.canvasObj.timelineObjectType = 'projectBar';
+		this.canvasObj.hasControls = this.canvasObj.hasBorders = false;
+		this.canvasObj.lockMovementX = this.canvasObj.lockMovementY = true;
+		this.canvasObj.lockScalingX = this.canvasObj.lockScalingY = true;
+		this.canvasObj.lockRotation = true;
 
-		self.canvas.add(obj);
+		self.canvas.add(this.canvasObj);
 	}
 
 	self.init = function () {
@@ -196,6 +196,7 @@ var Timeline = function (data) {
 
 		self.drawGrid();
 		self.drawProjectBars();
+		$('body').removeClass('loading');
 	};
 
 	self.drawProjectBars = function() {
