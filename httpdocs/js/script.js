@@ -61,6 +61,7 @@ var Timeline = function (data) {
 							self.config.minProjectWidth : width,
 			height: self.config.barHeight,
 			fill: 'rgba(124,145,222,.75)',
+			timelineStackPosition: stackPosition
 		});
 		this.canvasObj.projectId = this.id;
 		this.canvasObj.timelineObjectType = 'projectBar';
@@ -144,13 +145,13 @@ var Timeline = function (data) {
 		/* Hover events for project bars */
 		self.canvas.on('object:over', function(e) {
 			if (e.target.timelineObjectType === 'projectBar') {
-				self.onProjectBarMouseOver(e.target);
+				self.onProjectBarMouseOver(e);
 			}
 		});
 
 		self.canvas.on('object:out', function(e) {
 			if (e.target.timelineObjectType === 'projectBar') {
-				self.onProjectBarMouseOut(e.target);
+				self.onProjectBarMouseOut(e);
 			}
 		});
 
@@ -177,18 +178,39 @@ var Timeline = function (data) {
 		})(self.canvas.findTarget);
 	};
 
-	self.onProjectBarMouseOver = function (bar) {
+	self.onProjectBarMouseOver = function (e) {
+		var bar = e.target;
+		var infoBox;
+		var boxX;
+		var boxY;
+
 	  bar.setFill("red");
 	  self.canvas.renderAll();
 
-	  $('#project-'+bar.projectId).show();
+	  infoBox = $('#project-'+bar.projectId).addClass('active');
+	  boxX = bar.left - (infoBox.outerWidth()/2);
+	  boxY = bar.top + (bar.height/2);
+
+	  if (boxY + infoBox.outerHeight() > $(window).height()) {
+	  	boxY = bar.top - bar.height/2 - infoBox.outerHeight();
+	  }
+
+	  if (boxX - $(window).scrollLeft() < 0) {
+	  	boxX = $(window).scrollLeft() + 10;
+	  } else if (boxX + infoBox.outerWidth() - $(window).scrollLeft() >
+	  					 $(window).width()) {
+	  	boxX = $(window).scrollLeft() + $(window).width() - infoBox.outerWidth() - 10;
+	  }
+
+	  infoBox.css({ left: boxX, top: boxY });
 	};
 
-	self.onProjectBarMouseOut = function (bar) {
+	self.onProjectBarMouseOut = function (e) {
+		var bar = e.target;
 	  bar.setFill(self.config.barColor);
 	  self.canvas.renderAll();
 
-	  $('#project-'+bar.projectId).hide();
+	  $('#project-'+bar.projectId).removeClass('active');
 	};
 
 	self.render = function() {
@@ -264,7 +286,7 @@ $(function() {
 	});
 
 	// scroll horizontally instead of vertically with the mousewheel
-	$("body").on('mousewheel', function(e, delta) {
+	$("body").on('mousewheel', function (e, delta) {
       this.scrollLeft -= (delta * 30);
       e.preventDefault();
    });
