@@ -19,6 +19,7 @@ var Timeline = function (data) {
 	self.config.barHeight = 50;
 	self.config.barSpacing = 5;
 	self.config.barStackHeight = 10;
+	self.config.labelTextSettings = {};
 
 	self.canvas = null;
 
@@ -48,7 +49,7 @@ var Timeline = function (data) {
 
 		self.canvas.add(new fabric.Rect({
 			top: (stackPosition * (self.config.barHeight + self.config.barSpacing)) +
-					 self.config.barSpacing + self.config.barHeight/2,
+					 self.config.barSpacing + self.config.barHeight*1.5,
 			// offset one month length from the left edge
 			left: ((this.startOffset.asMonths() + 1) * self.config.monthWidth) + (width/2),
 			/* projects that were started and completed on the same day will have
@@ -122,20 +123,52 @@ var Timeline = function (data) {
 	self.render = function() {
 		//$('.main').html(ich.timeline(self.data));
 
-		// draw month lines
+		self.drawGrid();
+		self.drawProjectBars();
+	};
+
+	self.drawProjectBars = function() {
+		_.each(self.data.projects, function(proj, i) {
+			proj.drawBar(i % 10);
+		});
+	};
+
+	self.drawGrid = function() {
+		var startMonth = self.data.startDate.month();
+		var currentMonth;
+		var currentYear = self.data.startDate.year();
+
 		for (var i = 0; i <= self.config.monthCount; i++) {
+			// draw darker lines for January
+			var lineColor = currentMonth === 1 ? 'rgba(50, 50, 50, .5)' :
+				'rgba(200, 200, 200, .5)';
+			currentMonth = (startMonth + (i + 1)) % 12;
+
+			// month lines
 			self.canvas.add(new fabric.Rect({
 				top: self.canvas.height/2,
 				left: i * self.config.monthWidth,
 				height: self.canvas.height,
 				width: 1,
-				fill: 'rgba(200,200,200,.5)'
+				fill: lineColor
 			}));
-		}
 
-		_.each(self.data.projects, function(proj, i) {
-			proj.drawBar(i % 10);
-		});
+			// year labels -- print only on January lines
+			if (currentMonth === 1) {
+				self.canvas.add(new fabric.Text(
+					currentYear,
+					{
+						top: 20,
+						left: (i * self.config.monthWidth) + self.config.monthWidth - 10,
+						angle: -90,
+						fontFamily: "Times_New_Roman",
+						fontSize: 16,
+						fill: 'rgba(50, 50, 50, .5)'
+					})
+				);
+				currentYear++;
+			}
+		}
 	};
 };
 
