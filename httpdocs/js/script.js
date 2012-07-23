@@ -20,8 +20,8 @@ var Timeline = function (data) {
 	self.config.barHeight = null;
 	self.config.barSpacing = 5;
 	self.config.barStackHeight = 10;
-	self.config.barColor = 'rgba(124,145,222,.75)';
-	self.config.labelTextSettings = {};
+	self.config.barColors = ['#49a7e9', '#49e9e7', '#8e62ff', '#62ff92'];
+	self.config.barHoverColor = new fabric.Color('#d2ff00').setAlpha(.75);
 
 	self.canvas = null;
 
@@ -49,6 +49,7 @@ var Timeline = function (data) {
 	*/
 	self.Project.prototype.drawBar = function (stackPosition) {
 		var width = self.config.monthWidth * this.duration.asMonths();
+		var color = new fabric.Color(self.config.barColors[this.id % self.config.barColors.length]).setAlpha(.5);
 
 		this.canvasObj = new fabric.Rect({
 			top: (stackPosition * (self.config.barHeight + self.config.barSpacing)) +
@@ -60,9 +61,9 @@ var Timeline = function (data) {
 			width: width < self.config.minProjectWidth ?
 							self.config.minProjectWidth : width,
 			height: self.config.barHeight,
-			fill: 'rgba(124,145,222,.75)',
-			timelineStackPosition: stackPosition
+			fill: color.toRgba()
 		});
+		this.canvasObj.timelineColor = color;
 		this.canvasObj.projectId = this.id;
 		this.canvasObj.timelineObjectType = 'projectBar';
 		this.canvasObj.hasControls = this.canvasObj.hasBorders = false;
@@ -180,23 +181,29 @@ var Timeline = function (data) {
 
 	self.onProjectBarMouseOver = function (e) {
 		var bar = e.target;
+		var arrowAdjust = -5; // px (to shift to make room for tooltip arrow)
 		var infoBox;
 		var boxX;
 		var boxY;
 
-	  bar.setFill("red");
+	  bar.setFill(self.config.barHoverColor.toRgba());
+	  bar.setStroke('#ccc');
 	  self.canvas.renderAll();
 
 	  infoBox = $('#project-'+bar.projectId).addClass('active');
 	  boxX = bar.left - (infoBox.outerWidth()/2);
-	  boxY = bar.top + (bar.height/2);
+	  boxY = bar.top + (bar.height/2) + arrowAdjust;
 
+	  // if bottom of info box is offscreen, display above bar instead
 	  if (boxY + infoBox.outerHeight() > $(window).height()) {
 	  	boxY = bar.top - bar.height/2 - infoBox.outerHeight();
+	  	$('.tooltip', infoBox).addClass('arrowBottom');
 	  }
 
+	  // adjust left edge of info box if it is offscreen
 	  if (boxX - $(window).scrollLeft() < 0) {
 	  	boxX = $(window).scrollLeft() + 10;
+	  // adjust right edge of info box if it is offscreen
 	  } else if (boxX + infoBox.outerWidth() - $(window).scrollLeft() >
 	  					 $(window).width()) {
 	  	boxX = $(window).scrollLeft() + $(window).width() - infoBox.outerWidth() - 10;
@@ -207,7 +214,8 @@ var Timeline = function (data) {
 
 	self.onProjectBarMouseOut = function (e) {
 		var bar = e.target;
-	  bar.setFill(self.config.barColor);
+	  bar.setFill(bar.timelineColor.toRgba());
+	  bar.setStroke(null);
 	  self.canvas.renderAll();
 
 	  $('#project-'+bar.projectId).removeClass('active');
