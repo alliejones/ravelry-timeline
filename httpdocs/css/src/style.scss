@@ -167,6 +167,8 @@ strong {
 }
 
 footer {
+  .loading & { display: none; }
+
   background: #276278;
   bottom: 0;
   border-top: 1px solid darken(#276278, 10%);

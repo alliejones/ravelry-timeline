@@ -56,7 +56,7 @@ var Timeline = function (data) {
 			top: (stackPosition * (self.config.barHeight + self.config.barSpacing)) +
 					 self.config.barSpacing + self.config.barHeight*1.5,
 			// offset one month length from the left edge
-			left: ((this.startOffset.asMonths() + 1) * self.config.monthWidth) + (width/2),
+			left: (this.startOffset * self.config.monthWidth) + (width/2),
 			/* projects that were started and completed on the same day will have
 				 a length of zero, so set a default width of 1-day-ish in that case */ 
 			width: width < self.config.minProjectWidth ?
@@ -112,8 +112,13 @@ var Timeline = function (data) {
 
 		// set the start date offset for each project
 		_.each(self.data.projects, function (proj) {
-			proj.startOffset = moment.duration(proj.startDate.diff(self.data.startDate));
-			proj.startOffsetHuman = moment.duration(proj.startDate.diff(self.data.startDate)).asMonths();
+			/* Calculate the number of months after the beginning of the timeline
+			   that this project's start date occurs */
+			proj.startOffset =
+				(self.data.startDate.month() + 1) +
+				((proj.startDate.year() - self.data.startDate.year()) * 12) +
+				proj.startDate.month() +
+				((proj.startDate.date() + 1)/proj.startDate.daysInMonth());
 		});
 	};
 
