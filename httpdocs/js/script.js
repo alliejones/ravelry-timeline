@@ -266,18 +266,19 @@ var Timeline = function (data) {
 			if (currentMonth === 1) {
 				text = new fabric.Text(
 					currentYear, {
-						top: 20,
-						left: (i * self.config.monthWidth) + self.config.monthWidth - 10,
-						angle: -90,
-						fontFamily: "Times_New_Roman",
-						fontSize: 16,
-						fill: 'rgba(50, 50, 50, .5)'
+						top: 60,
+						left: (i * self.config.monthWidth) + self.config.monthWidth,
+						fontFamily: "Megalopolis",
+						fontSize: 100,
+						fill: 'rgba(50, 50, 50, .1)',
+						textAlign: 'center'
 				});
 
 				text.timelineObjectType = 'label';
 				text.selectable = false;
 
 				self.canvas.add(text);
+				text.setLeft(text.left + self.config.monthWidth * 6);
 
 				currentYear++;
 			}
