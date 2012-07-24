@@ -23,7 +23,7 @@
   <div role="main" class="main"></div>
 
   <footer>
-    <h1>Ravelry Project Timeline</h1>
+    <h1><span id="username"></span>Ravelry Project Timeline</h1>
   </footer>
 
   <script id="projectInfo" type="text/html">
@@ -40,6 +40,7 @@
         <p>
           {{startDateHuman}} to {{endDateHuman}}
         </p>
+        <p><a href="{{url}}" target="_blank">View on Ravelry</a></p>
       </div></li>
     {{/projects}}
     </ul>

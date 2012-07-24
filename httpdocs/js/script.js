@@ -29,6 +29,7 @@ var Timeline = function (data) {
 		this.id = data.id;
 		this.name = data.name;
 		this.patternName = data.pattern ? data.pattern.name : null;
+		this.url = data.url;
 
 		this.imageThumb = data.thumbnail ? data.thumbnail.src : null;
 		this.imageMed = data.thumbnail ? data.thumbnail.medium : null;
@@ -81,6 +82,7 @@ var Timeline = function (data) {
 	};
 
 	self.initProjects = function () {
+		$('#username').text(self.rawData.user.name + "'s ");
 		_.each(self.rawData.projects, function(proj, i) {
 			var start = moment(proj.started);
 			var end = moment(proj.completed);
@@ -123,6 +125,7 @@ var Timeline = function (data) {
 
 		self.canvas = new fabric.Canvas('c');
 		self.canvas.selection = false;
+		self.canvas.hoverCursor = 'pointer';
 
 		/* Set the canvas height and set bar height so they fit */
 		windowHeight = $(window).height();
