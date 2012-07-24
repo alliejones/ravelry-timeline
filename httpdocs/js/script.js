@@ -45,8 +45,8 @@ var Timeline = function (data) {
 	};
 
 	/*
-	   stackPosition is the zero-indexed timeline row the bar should be drawn in
-		 0 is the top row
+	 * stackPosition is the zero-indexed timeline row the bar should be drawn in
+	 * 0 is the top row
 	*/
 	self.Project.prototype.drawBar = function (stackPosition) {
 		var width = self.config.monthWidth * this.duration.asMonths();
@@ -76,6 +76,7 @@ var Timeline = function (data) {
 	}
 
 	self.init = function () {
+		self.applySettings();
 		self.initProjects();
 		self.initCanvas();
 		self.render();
@@ -187,6 +188,23 @@ var Timeline = function (data) {
 		})(self.canvas.findTarget);
 	};
 
+	self.applySettings = function () {
+		var settings = $.queryString();
+
+		if (settings.displayStyle === "heatmap") {
+			self.config.barStackHeight = 1;
+			self.config.barColors = ["#49a7e9"];
+		}
+	};
+
+	self.render = function() {
+		$('.main').html(ich.projectInfo(self.data));
+
+		self.drawGrid();
+		self.drawProjectBars();
+		$('body').removeClass('loading');
+	};
+
 	self.onProjectBarMouseOver = function (e) {
 		var bar = e.target;
 		var arrowAdjust = -5; // px (to shift to make room for tooltip arrow)
@@ -227,14 +245,6 @@ var Timeline = function (data) {
 	  self.canvas.renderAll();
 
 	  $('#project-'+bar.projectId).removeClass('active');
-	};
-
-	self.render = function() {
-		$('.main').html(ich.projectInfo(self.data));
-
-		self.drawGrid();
-		self.drawProjectBars();
-		$('body').removeClass('loading');
 	};
 
 	self.drawProjectBars = function() {
@@ -297,9 +307,30 @@ var Timeline = function (data) {
 };
 
 $(function() {
-	$.getJSON('/ravelry/httpdocs/data/progress-soph.json').success(function(data) {
+	var queryString = $.queryString();
+	queryString.projectData = queryString.projectData || 'me';
+	queryString.displayStyle = queryString.displayStyle || 'barGraph';
+
+	$.getJSON('/ravelry/httpdocs/data/progress-'+queryString.projectData+'.json')
+	 	.success(function(data) {
 		tl = new Timeline(data);
 		tl.init();
+	});
+
+	// update settings display
+	$('[data-prop="displayStyle"][data-val="'+queryString.displayStyle+'"]',
+		'.settings').addClass('selected');
+	$('[data-prop="projectData"][data-val="'+queryString.projectData+'"]',
+		'.settings').addClass('selected');
+
+	/* A hacky solution to redrawing the graph when the window is resized, but
+	 * fabric.js doesn't seem to recalculate the hover targets correctly
+	 * when only the project bars are redrawn
+	 */
+	$(window).smartresize(function() {
+		if ($(window).height() != tl.canvas.height) {
+			window.location.reload();
+		}
 	});
 
 	// scroll horizontally instead of vertically with the mousewheel

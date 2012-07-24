@@ -11,20 +11,23 @@
 
   <meta name="viewport" content="width=device-width">
   <link rel="stylesheet" href="css/style.css">
-
-  <script src="js/libs/modernizr-2.5.3.min.js"></script>
 </head>
 <body class="loading">
+
   <header>
-
-  </header>
-
-  <canvas id="c" style="position: absolute"></canvas>
-  <div role="main" class="main"></div>
-
-  <footer>
     <h1><span id="username"></span>Ravelry Project Timeline</h1>
-  </footer>
+    <div class="settings">
+      <strong>Style:</strong>
+        <a href="#" class="changeSetting" data-prop="displayStyle" data-val="barGraph">bar graph</a>
+        <a href="#" class="changeSetting" data-prop="displayStyle" data-val="heatMap">heat map(ish)</a><br>
+      <strong>Project Data:</strong>
+        <a href="#" class="changeSetting" data-prop="projectData" data-val="me">mine</a>
+        <a href="#" class="changeSetting" data-prop="projectData" data-val="soph">my lovely friend Soph's (lots more projects)</a>
+    </div>
+  </header>
+  <canvas id="c" style="position: absolute"></canvas>
+  <div class="main"></div>
+  <div class="loading"></div>
 
   <script id="projectInfo" type="text/html">
     <ul class="projectInfo">

@@ -166,13 +166,14 @@ strong {
   }
 }
 
-footer {
+header {
   .loading & { display: none; }
 
   background: #276278;
   bottom: 0;
   border-top: 1px solid darken(#276278, 10%);
-  height: 50px;
+  color: #fff;
+  height: 60px;
   left: 0;
   position: fixed;
   width: 100%;
@@ -180,8 +181,40 @@ footer {
   @include box-shadow(0 0 10px rgba(#000, .5));
 
   h1 {
-    line-height: 45px;
+    float: left;
+    line-height: 55px;
     margin-left: 25px;
+  }
+
+  strong { color: #fff; }
+
+  a {
+    background: rgba(#fff, .1);
+    border: 1px solid rgba(#fff, .25);
+    color: #D1E5ED;
+    line-height: 28px;
+    font-size: 14px;
+    margin: 0 4px;
+    padding: 2px 6px;
+    text-decoration: none;
+    @include border-radius(4px);
+
+    &:hover {
+      background: rgba(#fff, .2);
+      border: 1px solid rgba(#fff, .35);
+      color: #fff;
+    }
+
+    &.selected, &.selected:hover {
+      background: rgba(#fff, .3);
+      border: 1px solid rgba(#fff, .5);
+      color: #fff;
+    }
+  }
+
+  .settings {
+    float: right;
+    margin: 2px 20px 0 0;
   }
 }
 
