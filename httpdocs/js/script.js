@@ -271,20 +271,9 @@ var Timeline = function (data) {
 				fill: lineColor
 			});	
 
-			text = new fabric.Text(
-				currentMonth, {
-					top: 60,
-					left: (i * self.config.monthWidth) + self.config.monthWidth,
-					fontFamily: "Megalopolis",
-					fontSize: 25,
-					fill: 'rgba(50, 50, 50, .5)',
-					textAlign: 'center'
-			});
-
 			line.timelineObjectType = 'line';
 			line.selectable = false;
 
-			self.canvas.add(text);
 			self.canvas.add(line);
 
 			// year labels -- print only on January lines
@@ -294,7 +283,7 @@ var Timeline = function (data) {
 				text = new fabric.Text(
 					currentYear, {
 						top: 60,
-						left: (i * self.config.monthWidth) + self.config.monthWidth,
+						left: (i * self.config.monthWidth),
 						fontFamily: "Megalopolis",
 						fontSize: 100,
 						fill: 'rgba(50, 50, 50, .1)',
@@ -342,6 +331,12 @@ $(function() {
 		'.settings').addClass('selected');
 	$('[data-prop="projectData"][data-val="'+queryString.projectData+'"]',
 		'.settings').addClass('selected');
+
+	$.each($('.changeSetting', 'header'), function() {
+		var settings = $.queryString();
+		settings[$(this).data('prop')] = $(this).data('val');
+		$(this).attr('href', window.location.href.split("?")[0] + "?" + $.param(settings));
+	});
 
 	/* A hacky solution to redrawing the graph when the window is resized, but
 	 * fabric.js doesn't seem to recalculate the hover targets correctly

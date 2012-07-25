@@ -214,6 +214,8 @@ header {
     text-decoration: none;
     @include border-radius(4px);
 
+    &:visited { color: #D1E5ED; }
+
     &:hover {
       background: rgba(#fff, .2);
       border: 1px solid rgba(#fff, .35);

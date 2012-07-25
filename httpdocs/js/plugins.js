@@ -70,4 +70,17 @@ d){return-1!=d.indexOf(this.otag+a)},create_context:function(a){if(this.is_objec
 /*
  * Parse query string
  */
-jQuery.queryString=function(){var a={};var b=window.location.search.replace("?","");var c=b.split("&");$.each(c,function(b,c){var d=c.split("=");a[d[0]]=d[1]});return a}
+jQuery.queryString = function () {
+    var query = window.location.search.substring(1);
+    if (query === "")
+    	return {};
+
+    var parts = query.split("&");
+    var vars = {};
+
+    for (var i = 0; i < parts.length; i++) {
+        var pair = parts[i].split("=");
+        vars[pair[0]] = pair[1];
+    }
+    return vars;
+}
