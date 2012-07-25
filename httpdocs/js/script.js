@@ -320,7 +320,7 @@ $(function() {
 	queryString.projectData = queryString.projectData || 'me';
 	queryString.displayStyle = queryString.displayStyle || 'barGraph';
 
-	$.getJSON('/ravelry/httpdocs/data/progress-'+queryString.projectData+'.json')
+	$.getJSON('/ravelry-timeline/httpdocs/data/progress-'+queryString.projectData+'.json')
 	 	.success(function(data) {
 		tl = new Timeline(data);
 		tl.init();
