@@ -106,20 +106,15 @@ var Timeline = function (data) {
 			return proj.startDate.unix();
 		});
 
-		// set the whole timeline's start date and duration
-		self.data.startDate = self.data.projects[0].startDate;
-		self.data.duration = moment.duration(self.data.endDate.diff(self.data.startDate));
-		self.data.durationHuman = self.data.duration.humanize();
+		// set the whole timeline's start date
+		self.data.startDate = moment(self.data.projects[0].startDate).subtract('months', 1);
+		self.data.endDate = self.data.endDate.add('months', 1);
 
 		// set the start date offset for each project
 		_.each(self.data.projects, function (proj) {
 			/* Calculate the number of months after the beginning of the timeline
 			   that this project's start date occurs */
-			proj.startOffset =
-				(self.data.startDate.month() + 1) +
-				((proj.startDate.year() - self.data.startDate.year()) * 12) +
-				proj.startDate.month() +
-				((proj.startDate.date() + 1)/proj.startDate.daysInMonth());
+			proj.startOffset = self.calcMonthSpan(self.data.startDate, proj.startDate)
 		});
 	};
 
@@ -142,7 +137,8 @@ var Timeline = function (data) {
 		/* Determine the time span of the project data, which indicates how
 		   wide the canvas should be */
 		// add two extra months for whitespace on the left and right
-		self.config.monthCount = Math.ceil(self.data.duration.asMonths()) + 2;
+		self.config.monthCount = self.calcMonthSpan(self.data.startDate,
+			self.data.endDate) + 2;
 
 		monthWidth = Math.floor(self.config.minCanvasWidth / self.config.monthCount);
 		self.config.monthWidth = monthWidth < self.config.minMonthWidth ? self.config.minMonthWidth : monthWidth;
@@ -262,9 +258,9 @@ var Timeline = function (data) {
 
 		for (var i = 0; i <= self.config.monthCount; i++) {
 			// draw darker lines for January
-			var lineColor = currentMonth === 1 ? 'rgba(50, 50, 50, .5)' :
+			currentMonth = (startMonth + i) % 12;
+			var lineColor = currentMonth === 0 ? 'rgba(50, 50, 50, .5)' :
 				'rgba(200, 200, 200, .5)';
-			currentMonth = (startMonth + (i + 1)) % 12;
 
 			// month lines
 			line = new fabric.Rect({
@@ -273,15 +269,28 @@ var Timeline = function (data) {
 				height: self.canvas.height,
 				width: 1,
 				fill: lineColor
+			});	
+
+			text = new fabric.Text(
+				currentMonth, {
+					top: 60,
+					left: (i * self.config.monthWidth) + self.config.monthWidth,
+					fontFamily: "Megalopolis",
+					fontSize: 25,
+					fill: 'rgba(50, 50, 50, .5)',
+					textAlign: 'center'
 			});
 
 			line.timelineObjectType = 'line';
 			line.selectable = false;
 
+			self.canvas.add(text);
 			self.canvas.add(line);
 
 			// year labels -- print only on January lines
-			if (currentMonth === 1) {
+			if (currentMonth === 0) {
+				currentYear++;
+
 				text = new fabric.Text(
 					currentYear, {
 						top: 60,
@@ -298,11 +307,22 @@ var Timeline = function (data) {
 				self.canvas.add(text);
 				text.setLeft(text.left + self.config.monthWidth * 6);
 
-				currentYear++;
 			}
 		}
 	};
 
+	self.calcMonthSpan = function (begin, end) {
+		var span = 0;
+		if (end.year() === begin.year()) {
+			span = end.month() - begin.month();
+		} else {
+			span += ((end.year() - begin.year() - 1) * 12);
+			span += 11 - begin.month();
+			span += end.month() + 1;
+		}
+		span += end.date()/end.daysInMonth()
+		return span;
+	};
 
 };
 

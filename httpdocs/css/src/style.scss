@@ -83,14 +83,16 @@ h1 {
   @include text-shadow(1px 1px 0 rgba(#000, .5));
 }
 
-h2 {
+h2, strong, a, a:hover, a:visited, a:active {
   color: #276278;
+}
+
+h2 {
   font: 20px "Oldenburg", serif;
   @include text-shadow(1px 1px 0 rgba(#000, .25));
 }
 
 strong {
-  color: #276278;
   font: normal 1.05em "Oldenburg";
   @include text-shadow(1px 1px 0 rgba(#000, .25));
 }
@@ -154,6 +156,19 @@ strong {
     width: 75px;
     @include border-radius(4px);
     @include box-shadow(inset 0 0 2px rgba(#000,.5));
+  }
+
+  .ravelryLink {
+    background: rgba(#276278, .1);
+    border: 1px solid rgba(#276278, .2);
+    padding: 4px 6px;
+    text-decoration: none;
+    @include border-radius(4px);
+
+    &:hover {
+      background: rgba(#276278, .2);
+      border: 1px solid rgba(#276278, .3);
+    }
   }
 
   h2 {
