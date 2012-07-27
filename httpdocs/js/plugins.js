@@ -84,3 +84,34 @@ jQuery.queryString = function () {
     }
     return vars;
 }
+
+/*
+ * Calculate scroll bar width
+ * http://www.alexandre-gomes.com/?p=115
+ */
+
+$.scrollBarHeight = function () {  
+    var inner = document.createElement('p');  
+    inner.style.width = "100%";  
+    inner.style.height = "200px";  
+  
+    var outer = document.createElement('div');  
+    outer.style.position = "absolute";  
+    outer.style.top = "0px";  
+    outer.style.left = "0px";  
+    outer.style.visibility = "hidden";  
+    outer.style.width = "200px";  
+    outer.style.height = "150px";  
+    outer.style.overflow = "hidden";  
+    outer.appendChild (inner);  
+  
+    document.body.appendChild (outer);  
+    var h1 = inner.offsetHeight;  
+    outer.style.overflow = 'scroll';  
+    var h2 = inner.offsetHeight;  
+    if (h1 == h2) h2 = outer.clientWidth;  
+  
+    document.body.removeChild (outer);  
+  
+    return (h1 - h2);
+};  
