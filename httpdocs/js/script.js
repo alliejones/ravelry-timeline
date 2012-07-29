@@ -129,7 +129,7 @@ var Timeline = function (data) {
 		self.canvas.hoverCursor = 'pointer';
 
 		/* Set the canvas height and set bar height so they fit */
-		windowHeight = $(window).height();
+		windowHeight = $(window).innerHeight() - $.scrollBarHeight();
 		self.canvas.setHeight(windowHeight);
 		barHeight = Math.floor((windowHeight - ((self.config.barStackHeight + 2) * self.config.barSpacing)) / (self.config.barStackHeight + 2));
 		self.config.barHeight = barHeight;
