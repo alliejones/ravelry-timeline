@@ -1,319 +1,330 @@
 var tl;
+
 var Timeline = function (data) {
-	var self = this;
+	return {
+		rawData: data,
+		data: {
+			projects: [],
+		// these dates are for the whole timeline
+			startDate: null,
+			endDate: null,
+			duration: null,
+			durationHuman: null
+		},
 
-	self.rawData = data;
-	self.data = {};
-	self.data.projects = [];
+		config: {
+			minCanvasWidth: $(window).width(),
+			minMonthWidth: 30, //px
+			minProjectWidth: 10, //px
+			monthWidth: null, //px
+			barHeight: null,
+			barSpacing: 5,
+			barStackHeight: 10,
+			barColors: ['#49a7e9', '#49e9e7', '#8e62ff', '#62ff92'],
+			barHoverColor: new fabric.Color('#d2ff00').setAlpha(.75)
+		},
 
-	// these dates are for the whole timeline
-	self.data.startDate = null;
-	self.data.endDate = null;
-	self.data.duration = null;
-	self.data.durationHuman = null;
+		canvas: null,
 
-	self.config = {};
-	self.config.minCanvasWidth = $(window).width();
-	self.config.minMonthWidth = 30; //px
-	self.config.minProjectWidth = 10; //px
-	self.config.monthWidth = null; //px
-	self.config.barHeight = null;
-	self.config.barSpacing = 5;
-	self.config.barStackHeight = 10;
-	self.config.barColors = ['#49a7e9', '#49e9e7', '#8e62ff', '#62ff92'];
-	self.config.barHoverColor = new fabric.Color('#d2ff00').setAlpha(.75);
+		init: function () {
+			this.applySettings();
+			this.initProjects();
+			this.initCanvas();
+			this.render();
+		},
 
-	self.canvas = null;
+		initProjects: function () {
+			$('#username').text(this.rawData.user.name + "'s ");
+			_.each(this.rawData.projects, function(proj, i) {
+				var start = moment(proj.started);
+				var end = moment(proj.completed);
+				var duration = null;
 
-	self.Project = function (start, end, data) {
-		this.id = data.id;
-		this.name = data.name;
-		this.patternName = data.pattern ? data.pattern.name : null;
-		this.url = data.url;
+				proj.id = i;
 
-		this.imageThumb = data.thumbnail ? data.thumbnail.src : null;
-		this.imageMed = data.thumbnail ? data.thumbnail.medium : null;
-		
-		this.startDate = start;
-		this.startDateHuman = start ? start.format('LL') : null;
-		this.startOffset = null;
-		this.endDate = end;
-		this.endDateHuman = end ? end.format('LL') : null;
-		
-		this.duration = moment.duration(end.diff(start));
-		this.durationHuman = this.duration ? this.duration.asMonths() : null;
-	};
+				if (start !== null && end !== null) {
 
-	/*
-	 * stackPosition is the zero-indexed timeline row the bar should be drawn in
-	 * 0 is the top row
-	*/
-	self.Project.prototype.drawBar = function (stackPosition) {
-		var width = self.config.monthWidth * this.duration.asMonths();
-		var color = new fabric.Color(self.config.barColors[this.id % self.config.barColors.length]).setAlpha(.5);
+					// check if this project's completion date is the end of the timeline
+					if (this.data.endDate < end)
+						this.data.endDate = end;
 
-		this.canvasObj = new fabric.Rect({
-			top: (stackPosition * (self.config.barHeight + self.config.barSpacing)) +
-					 self.config.barSpacing + self.config.barHeight*1.5,
-			// offset one month length from the left edge
-			left: (this.startOffset * self.config.monthWidth) + (width/2),
-			/* projects that were started and completed on the same day will have
-				 a length of zero, so set a default width of 1-day-ish in that case */ 
-			width: width < self.config.minProjectWidth ?
-							self.config.minProjectWidth : width,
-			height: self.config.barHeight,
-			fill: color.toRgba()
-		});
-		this.canvasObj.timelineColor = color;
-		this.canvasObj.projectId = this.id;
-		this.canvasObj.timelineObjectType = 'projectBar';
-		this.canvasObj.hasControls = this.canvasObj.hasBorders = false;
-		this.canvasObj.lockMovementX = this.canvasObj.lockMovementY = true;
-		this.canvasObj.lockScalingX = this.canvasObj.lockScalingY = true;
-		this.canvasObj.lockRotation = true;
+					this.data.projects.push(new Project(start, end, proj));
+				}
+			}, this);
 
-		self.canvas.add(this.canvasObj);
-	}
+			// sort projects by start date
+			this.data.projects = _.sortBy(this.data.projects, function (proj) {
+				return proj.startDate.unix();
+			});
 
-	self.init = function () {
-		self.applySettings();
-		self.initProjects();
-		self.initCanvas();
-		self.render();
-	};
+			// set the whole timeline's start date
+			this.data.startDate = moment(this.data.projects[0].startDate).subtract('months', 1);
+			this.data.endDate = this.data.endDate.add('months', 1);
 
-	self.initProjects = function () {
-		$('#username').text(self.rawData.user.name + "'s ");
-		_.each(self.rawData.projects, function(proj, i) {
-			var start = moment(proj.started);
-			var end = moment(proj.completed);
-			var duration = null;
+			// set the start date offset for each project
+			_.each(this.data.projects, function (proj) {
+				/* Calculate the number of months after the beginning of the timeline
+				   that this project's start date occurs */
+				proj.startOffset = this.calcMonthSpan(this.data.startDate, proj.startDate)
+			}, this);
+		},
 
-			proj.id = i;
+		initCanvas: function() {
+			var monthWidth;
+			var canvasWidth;
+			var windowHeight;
+			var barHeight;
 
-			if (start !== null && end !== null) {
+			this.canvas = new fabric.Canvas('c');
+			this.canvas.selection = false;
+			this.canvas.hoverCursor = 'pointer';
 
-				// check if this project's completion date is the end of the timeline
-				if (self.data.endDate < end)
-					self.data.endDate = end;
+			/* Set the canvas height and set bar height so they fit */
+			windowHeight = $(window).innerHeight() - $.scrollBarHeight();
+			this.canvas.setHeight(windowHeight);
+			barHeight = Math.floor((windowHeight - ((this.config.barStackHeight + 2) * this.config.barSpacing)) / (this.config.barStackHeight + 2));
+			this.config.barHeight = barHeight;
 
-				self.data.projects.push(new self.Project(start, end, proj));
+			/* Determine the time span of the project data, which indicates how
+			   wide the canvas should be */
+			// add two extra months for whitespace on the left and right
+			this.config.monthCount = this.calcMonthSpan(this.data.startDate,
+				this.data.endDate) + 2;
+
+			monthWidth = Math.floor(this.config.minCanvasWidth / this.config.monthCount);
+			this.config.monthWidth = monthWidth < this.config.minMonthWidth ? this.config.minMonthWidth : monthWidth;
+
+			canvasWidth = this.config.monthWidth * this.config.monthCount;
+			canvasWidth = canvasWidth < this.config.minCanvasWidth ? this.config.minCanvasWidth : canvasWidth;
+			this.canvas.setWidth(canvasWidth);
+			$(window).width(canvasWidth);
+
+			/* Hover events for project bars */
+			this.canvas.on('object:over', function(e) {
+				if (e.target.timelineObjectType === 'projectBar') {
+					tl.onProjectBarMouseOver(e);
+				}
+			});
+
+			this.canvas.on('object:out', function(e) {
+				if (e.target.timelineObjectType === 'projectBar') {
+					tl.onProjectBarMouseOut(e);
+				}
+			});
+
+			/* This function is from the fabric.js demos:
+				 http://fabricjs.com/hovering/ */
+			this.canvas.findTarget = (function(originalFn) {
+			  return function() {
+			    var target = originalFn.apply(this, arguments);
+			    if (target) {
+			      if (this._hoveredTarget !== target) {
+			        tl.canvas.fire('object:over', { target: target });
+			        if (this._hoveredTarget) {
+			          this.canvas.fire('object:out', { target: this._hoveredTarget });
+			        }
+			        this._hoveredTarget = target;
+			      }
+			    }
+			    else if (this._hoveredTarget) {
+			      tl.canvas.fire('object:out', { target: this._hoveredTarget });
+			      this._hoveredTarget = null;
+			    }
+			    return target;
+			  };
+			})(this.canvas.findTarget);
+		},
+
+		applySettings: function () {
+			var settings = $.queryString();
+
+			if (settings.displayStyle === "heatmap") {
+				this.config.barStackHeight = 1;
+				this.config.barColors = ["#49a7e9"];
 			}
-		});
+		},
 
-		// sort projects by start date
-		self.data.projects = _.sortBy(self.data.projects, function (proj) {
-			return proj.startDate.unix();
-		});
+		render: function() {
+			$('.main').html(ich.projectInfo(this.data));
 
-		// set the whole timeline's start date
-		self.data.startDate = moment(self.data.projects[0].startDate).subtract('months', 1);
-		self.data.endDate = self.data.endDate.add('months', 1);
+			this.drawGrid();
+			this.drawProjectBars();
+			$('body').removeClass('loading');
+		},
 
-		// set the start date offset for each project
-		_.each(self.data.projects, function (proj) {
-			/* Calculate the number of months after the beginning of the timeline
-			   that this project's start date occurs */
-			proj.startOffset = self.calcMonthSpan(self.data.startDate, proj.startDate)
-		});
-	};
+		onProjectBarMouseOver: function (e) {
+			var bar = e.target;
+			var arrowAdjust = -5; // px (to shift to make room for tooltip arrow)
+			var infoBox;
+			var boxX;
+			var boxY;
 
-	self.initCanvas = function() {
-		var monthWidth;
-		var canvasWidth;
-		var windowHeight;
-		var barHeight;
+		  bar.setFill(this.config.barHoverColor.toRgba());
+		  bar.setStroke('#ccc');
+		  this.canvas.renderAll();
 
-		self.canvas = new fabric.Canvas('c');
-		self.canvas.selection = false;
-		self.canvas.hoverCursor = 'pointer';
+		  infoBox = $('#project-'+bar.projectId).addClass('active');
+		  boxX = bar.left - (infoBox.outerWidth()/2);
+		  boxY = bar.top + (bar.height/2) + arrowAdjust;
 
-		/* Set the canvas height and set bar height so they fit */
-		windowHeight = $(window).innerHeight() - $.scrollBarHeight();
-		self.canvas.setHeight(windowHeight);
-		barHeight = Math.floor((windowHeight - ((self.config.barStackHeight + 2) * self.config.barSpacing)) / (self.config.barStackHeight + 2));
-		self.config.barHeight = barHeight;
+		  // if bottom of info box is offscreen, display above bar instead
+		  if (boxY + infoBox.outerHeight() > $(window).height()) {
+		  	boxY = bar.top - bar.height/2 - infoBox.outerHeight();
+		  	$('.tooltip', infoBox).addClass('arrowBottom');
+		  }
 
-		/* Determine the time span of the project data, which indicates how
-		   wide the canvas should be */
-		// add two extra months for whitespace on the left and right
-		self.config.monthCount = self.calcMonthSpan(self.data.startDate,
-			self.data.endDate) + 2;
+		  // adjust left edge of info box if it is offscreen
+		  if (boxX - $(window).scrollLeft() < 0) {
+		  	boxX = $(window).scrollLeft() + 10;
+		  // adjust right edge of info box if it is offscreen
+		  } else if (boxX + infoBox.outerWidth() - $(window).scrollLeft() >
+		  					 $(window).width()) {
+		  	boxX = $(window).scrollLeft() + $(window).width() - infoBox.outerWidth() - 10;
+		  }
 
-		monthWidth = Math.floor(self.config.minCanvasWidth / self.config.monthCount);
-		self.config.monthWidth = monthWidth < self.config.minMonthWidth ? self.config.minMonthWidth : monthWidth;
+		  infoBox.css({ left: boxX, top: boxY });
+		},
 
-		canvasWidth = self.config.monthWidth * self.config.monthCount;
-		canvasWidth = canvasWidth < self.config.minCanvasWidth ? self.config.minCanvasWidth : canvasWidth;
-		self.canvas.setWidth(canvasWidth);
-		$(window).width(canvasWidth);
+		onProjectBarMouseOut: function (e) {
+			var bar = e.target;
+		  bar.setFill(bar.timelineColor.toRgba());
+		  bar.setStroke(null);
+		  this.canvas.renderAll();
 
-		/* Hover events for project bars */
-		self.canvas.on('object:over', function(e) {
-			if (e.target.timelineObjectType === 'projectBar') {
-				self.onProjectBarMouseOver(e);
-			}
-		});
+		  $('#project-'+bar.projectId).removeClass('active');
+		},
 
-		self.canvas.on('object:out', function(e) {
-			if (e.target.timelineObjectType === 'projectBar') {
-				self.onProjectBarMouseOut(e);
-			}
-		});
+		drawProjectBars: function() {
+			_.each(this.data.projects, function(proj, i) {
+				proj.drawBar(i % this.config.barStackHeight);
+			}, this);
+		},
 
-		/* This function is from the fabric.js demos:
-			 http://fabricjs.com/hovering/ */
-		self.canvas.findTarget = (function(originalFn) {
-		  return function() {
-		    var target = originalFn.apply(this, arguments);
-		    if (target) {
-		      if (this._hoveredTarget !== target) {
-		        self.canvas.fire('object:over', { target: target });
-		        if (this._hoveredTarget) {
-		          self.canvas.fire('object:out', { target: this._hoveredTarget });
-		        }
-		        this._hoveredTarget = target;
-		      }
-		    }
-		    else if (this._hoveredTarget) {
-		      self.canvas.fire('object:out', { target: this._hoveredTarget });
-		      this._hoveredTarget = null;
-		    }
-		    return target;
-		  };
-		})(self.canvas.findTarget);
-	};
+		drawGrid: function() {
+			var startMonth = this.data.startDate.month();
+			var currentMonth;
+			var currentYear = this.data.startDate.year();
+			var line;
+			var text;
 
-	self.applySettings = function () {
-		var settings = $.queryString();
+			for (var i = 0; i <= this.config.monthCount; i++) {
+				// draw darker lines for January
+				currentMonth = (startMonth + i) % 12;
+				var lineColor = currentMonth === 0 ? 'rgba(50, 50, 50, .5)' :
+					'rgba(200, 200, 200, .5)';
 
-		if (settings.displayStyle === "heatmap") {
-			self.config.barStackHeight = 1;
-			self.config.barColors = ["#49a7e9"];
-		}
-	};
-
-	self.render = function() {
-		$('.main').html(ich.projectInfo(self.data));
-
-		self.drawGrid();
-		self.drawProjectBars();
-		$('body').removeClass('loading');
-	};
-
-	self.onProjectBarMouseOver = function (e) {
-		var bar = e.target;
-		var arrowAdjust = -5; // px (to shift to make room for tooltip arrow)
-		var infoBox;
-		var boxX;
-		var boxY;
-
-	  bar.setFill(self.config.barHoverColor.toRgba());
-	  bar.setStroke('#ccc');
-	  self.canvas.renderAll();
-
-	  infoBox = $('#project-'+bar.projectId).addClass('active');
-	  boxX = bar.left - (infoBox.outerWidth()/2);
-	  boxY = bar.top + (bar.height/2) + arrowAdjust;
-
-	  // if bottom of info box is offscreen, display above bar instead
-	  if (boxY + infoBox.outerHeight() > $(window).height()) {
-	  	boxY = bar.top - bar.height/2 - infoBox.outerHeight();
-	  	$('.tooltip', infoBox).addClass('arrowBottom');
-	  }
-
-	  // adjust left edge of info box if it is offscreen
-	  if (boxX - $(window).scrollLeft() < 0) {
-	  	boxX = $(window).scrollLeft() + 10;
-	  // adjust right edge of info box if it is offscreen
-	  } else if (boxX + infoBox.outerWidth() - $(window).scrollLeft() >
-	  					 $(window).width()) {
-	  	boxX = $(window).scrollLeft() + $(window).width() - infoBox.outerWidth() - 10;
-	  }
-
-	  infoBox.css({ left: boxX, top: boxY });
-	};
-
-	self.onProjectBarMouseOut = function (e) {
-		var bar = e.target;
-	  bar.setFill(bar.timelineColor.toRgba());
-	  bar.setStroke(null);
-	  self.canvas.renderAll();
-
-	  $('#project-'+bar.projectId).removeClass('active');
-	};
-
-	self.drawProjectBars = function() {
-		_.each(self.data.projects, function(proj, i) {
-			proj.drawBar(i % self.config.barStackHeight);
-		});
-	};
-
-	self.drawGrid = function() {
-		var startMonth = self.data.startDate.month();
-		var currentMonth;
-		var currentYear = self.data.startDate.year();
-		var line;
-		var text;
-
-		for (var i = 0; i <= self.config.monthCount; i++) {
-			// draw darker lines for January
-			currentMonth = (startMonth + i) % 12;
-			var lineColor = currentMonth === 0 ? 'rgba(50, 50, 50, .5)' :
-				'rgba(200, 200, 200, .5)';
-
-			// month lines
-			line = new fabric.Rect({
-				top: self.canvas.height/2,
-				left: i * self.config.monthWidth,
-				height: self.canvas.height,
-				width: 1,
-				fill: lineColor
-			});	
-
-			line.timelineObjectType = 'line';
-			line.selectable = false;
-
-			self.canvas.add(line);
-
-			// year labels -- print only on January lines
-			if (currentMonth === 0) {
-				currentYear++;
-
-				text = new fabric.Text(
-					currentYear, {
-						top: 60,
-						left: (i * self.config.monthWidth),
-						fontFamily: "Megalopolis",
-						fontSize: 100,
-						fill: 'rgba(50, 50, 50, .1)',
-						textAlign: 'center'
+				// month lines
+				line = new fabric.Rect({
+					top: this.canvas.height/2,
+					left: i * this.config.monthWidth,
+					height: this.canvas.height,
+					width: 1,
+					fill: lineColor
 				});
 
-				text.timelineObjectType = 'label';
-				text.selectable = false;
+				line.timelineObjectType = 'line';
+				line.selectable = false;
 
-				self.canvas.add(text);
-				text.setLeft(text.left + self.config.monthWidth * 6);
+				this.canvas.add(line);
 
+				// year labels -- print only on January lines
+				if (currentMonth === 0) {
+					currentYear++;
+
+					text = new fabric.Text(
+						currentYear, {
+							top: 60,
+							left: (i * this.config.monthWidth),
+							fontFamily: "Megalopolis",
+							fontSize: 100,
+							fill: 'rgba(50, 50, 50, .1)',
+							textAlign: 'center'
+					});
+
+					text.timelineObjectType = 'label';
+					text.selectable = false;
+
+					this.canvas.add(text);
+					text.setLeft(text.left + this.config.monthWidth * 6);
+
+				}
 			}
-		}
-	};
+		},
 
-	self.calcMonthSpan = function (begin, end) {
-		var span = 0;
-		if (end.year() === begin.year()) {
-			span = end.month() - begin.month();
-		} else {
-			span += ((end.year() - begin.year() - 1) * 12);
-			span += 11 - begin.month();
-			span += end.month() + 1;
+		calcMonthSpan: function (begin, end) {
+			var span = 0;
+			if (end.year() === begin.year()) {
+				span = end.month() - begin.month();
+			} else {
+				span += ((end.year() - begin.year() - 1) * 12);
+				span += 11 - begin.month();
+				span += end.month() + 1;
+			}
+			span += end.date()/end.daysInMonth()
+			return span;
 		}
-		span += end.date()/end.daysInMonth()
-		return span;
-	};
 
+	}
 };
+
+var Project = function (start, end, data) {
+	var duration = moment.duration(end.diff(start));
+	var durationHuman = duration ? duration.asMonths() : null;
+
+	return {
+		id: data.id,
+		name: data.name,
+		patternName: data.pattern ? data.pattern.name : null,
+		url: data.url,
+
+		imageThumb: data.thumbnail ? data.thumbnail.src : null,
+		imageMed: data.thumbnail ? data.thumbnail.medium : null,
+
+		startDate: start,
+		startDateHuman: start ? start.format('LL') : null,
+		startOffset: null,
+		endDate: end,
+		endDateHuman: end ? end.format('LL') : null,
+
+		duration: duration,
+		durationHuman: durationHuman,
+
+		/*
+		 * stackPosition is the zero-indexed timeline row the bar should be drawn in
+		 * 0 is the top row
+		 */
+		drawBar: function (stackPosition) {
+			var width = tl.config.monthWidth * this.duration.asMonths();
+			var color = new fabric.Color(tl.config.barColors[this.id % tl.config.barColors.length]).setAlpha(.5);
+
+			this.canvasObj = new fabric.Rect({
+				top: (stackPosition * (tl.config.barHeight + tl.config.barSpacing)) +
+						 tl.config.barSpacing + tl.config.barHeight*1.5,
+				// offset one month length from the left edge
+				left: (this.startOffset * tl.config.monthWidth) + (width/2),
+				/* projects that were started and completed on the same day will have
+					 a length of zero, so set a default width of 1-day-ish in that case */
+				width: width < tl.config.minProjectWidth ?
+								tl.config.minProjectWidth : width,
+				height: tl.config.barHeight,
+				fill: color.toRgba()
+			});
+			this.canvasObj.timelineColor = color;
+			this.canvasObj.projectId = this.id;
+			this.canvasObj.timelineObjectType = 'projectBar';
+			this.canvasObj.hasControls = this.canvasObj.hasBorders = false;
+			this.canvasObj.lockMovementX = this.canvasObj.lockMovementY = true;
+			this.canvasObj.lockScalingX = this.canvasObj.lockScalingY = true;
+			this.canvasObj.lockRotation = true;
+
+			tl.canvas.add(this.canvasObj);
+		}
+	};
+};
+
+
+
+
 
 $(function() {
 	var queryString = $.queryString();
